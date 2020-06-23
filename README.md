@@ -1,4 +1,4 @@
-# WMI-Script
+# PyWMI-Script
 A script for Microsoft WMI 
 
 # Basic
