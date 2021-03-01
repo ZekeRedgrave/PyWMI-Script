@@ -21,3 +21,5 @@ print(x.getBaseboard(key="serialnumber"))
 print(x.getBaseboard()["serialnumber"])
 ```
 
+# Request
+Any request to add more on this Python Script? please send this Request into my Email Address on zekeredgrave@gmail.com or zeroredgrave@gmail.com
