@@ -2,7 +2,7 @@
 A script for Microsoft WMI 
 
 # Basic
-- This script will able to get all Hardware and Software Information Automatically without Command Prompt or Powershell
+- This script will used to get all Hardware and Software Information Automatically without Command Prompt or Powershell
 - Easy to Use and no need to type a command on Command Prompt or Powershell
 - This is made from scratch for Python Purposes
 
@@ -11,10 +11,12 @@ A script for Microsoft WMI
 import WMIC
 
 x = WMIC.WMIC()
-# Call All System Hardware Information and return dict() value
+# Get the Information from Motherbord Hardware Information and return dict()
 print(x.getBaseboard())
+# or
+print(WMIC().getBaseboard())
 
-# You can get the Serial Number in Baseboard
+# You can also use the 'serialnumber' from wmic baseboard -parag as key value in getBaseboard()
 print(x.getBaseboard(key="serialnumber"))
 print(x.getBaseboard()["serialnumber"])
 ```
