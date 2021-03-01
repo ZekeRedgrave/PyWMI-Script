@@ -4,10 +4,10 @@ The WMI command-line (WMIC) utility provides a command-line interface for Window
 This Class is only use to get all Computer Information from Software to Hardware using Windows OS from Microsoft.
 
 Author: Zeke Redgrave
-Version: 1
+Version: 2
 
 '''
-import xml.etree.ElementTree as ET, subprocess, json, os
+import xml.etree.ElementTree as ET, subprocess, json, os, platform, sys
 
 class WMIC:
 	def __init__(self):
@@ -16,19 +16,21 @@ class WMIC:
 		self.startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
 		self.startupinfo.wShowWindow = subprocess.SW_HIDE
 
+		if self.checkWindowsOS() is False: raise Exception("The OS you running is not Available!")
+
 	def getBaseboard(self, key=""):
 		'''
 		Method: Return Dictionary
 		Command: wmic baseboard list /format:rawxml
 
-		Ex. print(WMIC().getBaseboard()['key'])
+		Description:
+			-> WMIC().getBaseboard()['key'] or WMIC().getBaseboard(key="mykey") return dict()
 		'''
 		Motherboard = {}
-		root = ET.fromstring(str(subprocess.Popen(["powershell", "-command", "wmic baseboard list /format:rawxml"], startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
+		root = ET.fromstring(str(subprocess.Popen("wmic baseboard list /format:rawxml", startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
 
 		for a in root[1][0][0]:
-			for b in a:
-				Motherboard[a.attrib['NAME'].lower()] = b.text
+			for b in a: Motherboard[a.attrib['NAME'].lower()] = b.text
 
 		return Motherboard if key == "" else Motherboard[key.lower()]
 
@@ -37,14 +39,14 @@ class WMIC:
 		Method: Return Dictionary
 		Command: wmic cpu list /format:rawxml
 		
-		Ex. print(WMIC().getComputerProcessingUnit()['key'])
+		Description:
+			-> WMIC().getComputerProcessingUnit()['key'] or WMIC().getComputerProcessingUnit(key="mykey") return dict()
 		'''
 		Processor = {}
-		root = ET.fromstring(str(subprocess.Popen(["powershell", "-command", "wmic cpu list /format:rawxml"], startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
+		root = ET.fromstring(str(subprocess.Popen("wmic cpu list /format:rawxml", startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
 
 		for a in root[1][0][0]:
-			for b in a:
-				Processor[a.attrib['NAME'].lower()] = b.text
+			for b in a: Processor[a.attrib['NAME'].lower()] = b.text
 
 		return Processor if key == "" else Processor[key.lower()]
 
@@ -52,71 +54,49 @@ class WMIC:
 		'''
 		Method: Return List
 		Command: wmic memorychip list /format:rawxml
-		
-		Ex. print(WMIC().getComputerProcessingUnit()[integer]) -->> Display String JSON Format
-		Notice: To Convert String to JSON -->> json.loads(WMIC().getComputerProcessingUnit()[int])
+
+		Description:
+			-> WMIC().getComputerProcessingUnit() return list() data inside of dict()
+			-> Get an Information from Memory Card or RAM called today
+			-> WMIC().getMemoryCard(index=0) or WMIC().getMemoryCard()[0] return dict()
 		'''
 		Memory = []
-		_Memory = {}
-		Count = 0
-		root = ET.fromstring(str(subprocess.Popen(["powershell", "-command", "wmic memorychip list /format:rawxml"], startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
+		root = ET.fromstring(str(subprocess.Popen("wmic memorychip list /format:rawxml", startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
 
 		for a in root[1][0]:
-			Memory.append(Count)
-
-			for b in a:
-				for c in b:
-					_Memory[b.attrib['NAME'].lower()] = c.text
-
-			Memory[Count] = json.dumps(_Memory)
 			_Memory = {}
 
-			Count += 1
+			for b in a:
+				for c in b: _Memory[b.attrib['NAME'].lower()] = c.text
+
+			Memory.append(_Memory)
 
 		return Memory if index == None else Memory[index]
 
 	def getNetworkInterfaceCard(self, setEnable=True, index=None):
 		'''
-		Method: Return List
+		Method: Return List or Dict
 		Command: wmic nic where NetEnabled=true list /format:rawxml
 		Parameter: setEnable=True -->> Default
 		
-		Ex. print(WMIC().getNetworkInterfaceCard()[integer]) -->> Display String JSON Format
-		Notice: To Convert String to JSON -->> json.loads(WMIC().getNetworkInterfaceCard()[int])
+		Description:
+			-> WMIC().getNetworkInterfaceCard() return list() data inside of dict()
+			-> Get an Information from Network Card
+			-> WMIC().getNetworkInterfaceCard(index=0) or WMIC().getNetworkInterfaceCard()[0] return dict()
 		'''
 		NIC = []
-		_NIC = {}
-		Count = 0
+		root =  None 
 
-		if setEnable is True:
-			root = ET.fromstring(str(subprocess.Popen(["powershell", "-command", "wmic nic where NetEnabled=true list /format:rawxml"], startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
+		if setEnable is True: root = ET.fromstring(str(subprocess.Popen("wmic nic where NetEnabled=true list /format:rawxml", startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
+		else: root = ET.fromstring(str(subprocess.Popen("wmic nic list /format:rawxml", startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
 
-			for a in root[1][0]:
-				NIC.append(Count)
+		for a in root[1][0]:
+			_NIC = {}
 
-				for b in a:
-					for c in b:
-						_NIC[b.attrib['NAME'].lower()] = c.text
+			for b in a:
+				for c in b: _NIC[b.attrib['NAME'].lower()] = c.text
 
-				NIC[Count] = json.dumps(_NIC)
-				_NIC = {}
-
-				Count += 1
-
-		else:
-			root = ET.fromstring(str(subprocess.Popen(["powershell", "-command", "wmic nic list /format:rawxml"], startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
-
-			for a in root[1][0]:
-				NIC.append(Count)
-
-				for b in a:
-					for c in b:
-						_NIC[b.attrib['NAME'].lower()] = c.text
-
-				NIC[Count] = json.dumps(_NIC)
-				_NIC = {}
-
-				Count += 1
+			NIC.append(_NIC)
 
 		return NIC if index == None else NIC[index]
 
@@ -125,25 +105,21 @@ class WMIC:
 		Method: Return List
 		Command: wmic diskdrive list /format:rawxml
 		
-		Ex. print(WMIC().getStorage()[integer]) -->> Display String JSON Format
-		Notice: To Convert String to JSON -->> json.loads(WMIC().getStorage()[int])
+		Description:
+			-> WMIC().getStorage() return list() data inside of dict()
+			-> Get an Information from Storage Drive Device Card
+			-> WMIC().getStorage(index=0) or WMIC().getStorage()[0] return dict()
 		'''
 		Storage = []
-		_Storage = {}
-		Count = 0
-		root = ET.fromstring(str(subprocess.Popen(["powershell", "-command", "wmic diskdrive list /format:rawxml"], startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
+		root = ET.fromstring(str(subprocess.Popen("wmic diskdrive list /format:rawxml", startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
 
 		for a in root[1][0]:
-			Storage.append(Count)
-
-			for b in a:
-				for c in b:
-					_Storage[b.attrib['NAME'].lower()] = c.text
-
-			Storage[Count] = json.dumps(_Storage)
 			_Storage = {}
 
-			Count += 1
+			for b in a:
+				for c in b: _Storage[b.attrib['NAME'].lower()] = c.text
+
+			Storage.append(_Storage)
 
 		return Storage if index == None else Storage[index]
 
@@ -152,49 +128,49 @@ class WMIC:
 		Method: Return List
 		Command: wmic desktopmonitor list /format:rawxml
 		
-		Ex. print(WMIC().getDesktopMonitor()[integer]) -->> Display String JSON Format
-		Notice: To Convert String to JSON -->> json.loads(WMIC().getDesktopMonitor()[int])
+		Description:
+			-> WMIC().getDesktopMonitor() return list() data inside of dict()
+			-> Get an Information from Monitor
+			-> WMIC().getDesktopMonitor(index=0) or WMIC().getDesktopMonitor()[0] return dict()
 		'''
 		DesktopMonitor = []
-		_DesktopMonitor = {}
-		Count = 0
-		root = ET.fromstring(str(subprocess.Popen(["powershell", "-command", "wmic desktopmonitor list /format:rawxml"], startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
+		root = ET.fromstring(str(subprocess.Popen("wmic desktopmonitor list /format:rawxml", startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
 
 		for a in root[1][0]:
-			DesktopMonitor.append(Count)
-
-			for b in a:
-				for c in b:
-					_DesktopMonitor[b.attrib['NAME'].lower()] = c.text
-
-			DesktopMonitor[Count] = json.dumps(_DesktopMonitor)
 			_DesktopMonitor = {}
 
-			Count += 1
+			for b in a:
+				for c in b: _DesktopMonitor[b.attrib['NAME'].lower()] = c.text
+
+			DesktopMonitor.append(_DesktopMonitor)
 
 		return DesktopMonitor if index == None else DesktopMonitor[index]
 
-	def getOperatingSystem(self):
+	def getOperatingSystem(self, index=''):
 		'''
 		Method: Return Dictionary
 		Command: wmic os list /format:rawxml
-
-		Ex. print(WMIC().getOperatingSystem()['key'])
+		
+		Description:
+			-> WMIC().getDesktopMonitor() return list() data inside of dict()
+			-> Get an OS Information
+			-> WMIC().getOperatingSystem()['key'] or WMIC().getOperatingSystem(index='key') return dict()
 		'''
 		OS = {}
-		root = ET.fromstring(str(subprocess.Popen(["powershell", "-command", "wmic os list brief /format:rawxml"], startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
+		root = ET.fromstring(str(subprocess.Popen("wmic os list brief /format:rawxml", startupinfo=self.startupinfo, stdout=subprocess.PIPE).stdout.read().decode("utf-8")).replace("\r", "").replace("\n", "").replace("\t", ""))
 
 		for a in root[1][0][0]:
 			for b in a:
 				OS[a.attrib['NAME'].lower()] = b.text
 
-		return OS
+		return OS if index == '' else OS[index]
 
 	def getComputerName(self):
 		'''
 		Method: Return String
-
-		Ex. print(WMIC().getComputerName())
+		
+		Description:
+			-> Return Computer | PC Name
 		'''
 		return os.environ['COMPUTERNAME']
 
@@ -202,6 +178,10 @@ class WMIC:
 		'''
 		Method: Return String
 
-		Ex. print(WMIC().getComputerUsername())
+		Description:
+			-> Return User Name in the Computer | PC
 		'''
 		return os.environ['USERNAME']
+
+	# Checking if this is running on Windows OS only
+	def checkWindowsOS(self): return True if sys.platform == "win32" else False
